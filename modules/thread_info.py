@@ -14,8 +14,10 @@ def run(session, thd_id, delay=1, back=False):
     curses.init_pair(2, curses.COLOR_CYAN, -1)
     curses.init_pair(3, curses.COLOR_GREEN, -1)
     curses.init_pair(4, curses.COLOR_RED, -1)
-    curses.init_pair(10, curses.COLOR_YELLOW, curses.COLOR_WHITE)
+    curses.init_pair(10, 166, curses.COLOR_WHITE)
     curses.init_pair(11, curses.COLOR_BLUE, curses.COLOR_WHITE)
+    curses.init_pair(12, 23, curses.COLOR_WHITE)
+
     curses.noecho()
     curses.cbreak()
     # Listing for 1/10th of second at a time
@@ -30,7 +32,15 @@ def run(session, thd_id, delay=1, back=False):
     #        "trx_latency","rows_examined"
     #        ).order_by("statement_latency desc").limit(max_files)
     session.set_current_schema('sys')
-    query = session.sql("select * from sys.processlist p1 join performance_schema.threads pps on pps.thread_id = p1.thd_id where thd_id=%s" % thd_id);
+    query = session.sql("select @@version, @@version_comment, @@hostname, @@port")
+    result = query.execute()
+    info = {}
+    for row in result.fetch_all():
+        info['version'] = row[0]
+        info['comment'] = row[1]
+        info['hostname'] = row[2]
+        info['port'] = row[3]
+
     
     # Clear screen
     stdscr.clear()
@@ -39,23 +49,31 @@ def run(session, thd_id, delay=1, back=False):
     keep_running = True
     while keep_running:
         time = datetime.now()
+        query = session.sql("select * from sys.processlist p1 join performance_schema.threads pps on pps.thread_id = p1.thd_id where thd_id=%s" % thd_id);
         result = query.execute()
         if not result.has_data():
             keep_running = False
             break
- 
-        stdscr.addstr(0, 0, "My", curses.color_pair(10) )
-        stdscr.addstr(0, 2, "SQL ", curses.color_pair(11) )
-        stdscr.addstr(0, 6, "Shell - ", curses.color_pair(10) )
-        stdscr.addstr(0, 14, time.strftime('%A %-d %B %H:%M:%S'), 
-                      curses.color_pair(1))
+
+        y,x = stdscr.getmaxyx()
+        stdscr.addstr(0, 0, " " * x, curses.color_pair(10) )
+        stdscr.addstr(0, 0, "My", curses.color_pair(12) )
+        stdscr.addstr(0, 2, "SQL ", curses.color_pair(10) )
+        stdscr.addstr(0, 6, "Shell | ", curses.color_pair(12) )
+        stdscr.addstr(0, 14, info['comment'], curses.color_pair(10) )
+        stdscr.addstr(0, 14+len(info['comment'])+1, info['version'], curses.color_pair(10) )
+        length=len(time.strftime('%A %-d %B %H:%M:%S'))
+        stdscr.addstr(0, (x-length)-1, time.strftime('%A %-d %B %H:%M:%S'),
+                      curses.color_pair(11))
+
         stdscr.addstr(2, 0, "Query Details:", curses.A_BOLD)
  
         # Print the rows in the result
         line = 4
         for row in result.fetch_all():
             stdscr.addstr(line, 0, "Query:", curses.A_BOLD )
-            stdscr.addstr(line, 8, str(row[38]))
+            query_text = str(row[38])
+            stdscr.addstr(line, 8, query_text)
             line = line + 2
             stdscr.addstr(line, 0, "Thread ID:", curses.A_BOLD )
             stdscr.addstr(line, 11, str(row[0]))
@@ -110,9 +128,26 @@ def run(session, thd_id, delay=1, back=False):
             stdscr.addstr(line, 42, str(row[15]))
             stdscr.addstr(line, 49, "FullScan:", curses.A_BOLD )
             stdscr.addstr(line, 59, str(row[16]))
+            
+        line = line + 2
+        query = session.sql("EXPLAIN %s" % query_text);
+        result = query.execute()
+        if not result.has_data():
+            keep_running = False
+            break
+        stdscr.addstr(line, 5, "EXPLAIN:", curses.A_BOLD )
+        line = line + 1
+        fmt_row = " {0:4} {1:6} {2:6} {3:10} {4:6} {5:10} {6:8} {7:6} {8:6} {9:9} {10:5} {11:30}"
+        header = fmt_row.format("  id", "select", "table", "partitions", "type", "poss keys", "key", "k len", "ref", "     rows", "filt ", "extra")
+        stdscr.addstr(line, 0, header, curses.A_BOLD)
 
-             
-        #stdscr.refresh()
+
+        for row in result.fetch_all():
+            line = line + 1
+            stdscr.addstr(line, 0, fmt_row.format(*row))
+ 
+        stdscr.refresh()
+        stdscr.move(y-1,0)
  
         # Wait until delay seconds have passed while listening for the q key
         while (datetime.now() - time).total_seconds() < delay:
