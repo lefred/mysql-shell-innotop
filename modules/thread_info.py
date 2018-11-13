@@ -1,0 +1,130 @@
+import __builtin__
+import curses
+from datetime import datetime
+from time import sleep
+import innotop
+
+def run(session, thd_id, delay=1, back=False):
+    
+    # Setup curses
+    stdscr = curses.initscr()
+    curses.start_color()
+    curses.use_default_colors()
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_WHITE)
+    curses.init_pair(2, curses.COLOR_CYAN, -1)
+    curses.init_pair(3, curses.COLOR_GREEN, -1)
+    curses.init_pair(4, curses.COLOR_RED, -1)
+    curses.init_pair(10, curses.COLOR_YELLOW, curses.COLOR_WHITE)
+    curses.init_pair(11, curses.COLOR_BLUE, curses.COLOR_WHITE)
+    curses.noecho()
+    curses.cbreak()
+    # Listing for 1/10th of second at a time
+    curses.halfdelay(1)
+    stdscr.keypad(True)
+ 
+    # Define the query
+    sys_schema = session.get_schema("sys")
+    table = sys_schema.get_table("session")
+    #query = table.select("thd_id","conn_id","pid","user","db",
+    #        "current_statement","statement_latency","lock_latency",
+    #        "trx_latency","rows_examined"
+    #        ).order_by("statement_latency desc").limit(max_files)
+    session.set_current_schema('sys')
+    query = session.sql("select * from sys.processlist p1 join performance_schema.threads pps on pps.thread_id = p1.thd_id where thd_id=%s" % thd_id);
+    
+    # Clear screen
+    stdscr.clear()
+    
+    # Run the query and generate the report
+    keep_running = True
+    while keep_running:
+        time = datetime.now()
+        result = query.execute()
+        if not result.has_data():
+            keep_running = False
+            break
+ 
+        stdscr.addstr(0, 0, "My", curses.color_pair(10) )
+        stdscr.addstr(0, 2, "SQL ", curses.color_pair(11) )
+        stdscr.addstr(0, 6, "Shell - ", curses.color_pair(10) )
+        stdscr.addstr(0, 14, time.strftime('%A %-d %B %H:%M:%S'), 
+                      curses.color_pair(1))
+        stdscr.addstr(2, 0, "Query Details:", curses.A_BOLD)
+ 
+        # Print the rows in the result
+        line = 4
+        for row in result.fetch_all():
+            stdscr.addstr(line, 0, "Query:", curses.A_BOLD )
+            stdscr.addstr(line, 8, str(row[38]))
+            line = line + 2
+            stdscr.addstr(line, 0, "Thread ID:", curses.A_BOLD )
+            stdscr.addstr(line, 11, str(row[0]))
+            stdscr.addstr(line, 20, "Conn ID:", curses.A_BOLD )
+            stdscr.addstr(line, 29, str(row[1]))
+            stdscr.addstr(line, 47, "PID:", curses.A_BOLD )
+            stdscr.addstr(line, 52, str(row[26]))
+            stdscr.addstr(line, 63, "User:", curses.A_BOLD )
+            stdscr.addstr(line, 69, str(row[2]))
+            stdscr.addstr(line, 90, "DB:", curses.A_BOLD )
+            stdscr.addstr(line, 94, str(row[3]))
+            line = line + 1
+            stdscr.addstr(line, 2, "Command:", curses.A_BOLD )
+            stdscr.addstr(line, 11, str(row[4]))
+            stdscr.addstr(line, 42, "Progress:", curses.A_BOLD )
+            stdscr.addstr(line, 52, str(row[9]))
+            stdscr.addstr(line, 60, "AutoCom:", curses.A_BOLD )
+            stdscr.addstr(line, 69, str(row[25]))
+            stdscr.addstr(line, 85, "TxState:", curses.A_BOLD )
+            stdscr.addstr(line, 94, str(row[24]))
+            line = line + 1
+            stdscr.addstr(line, 1, "LockTime:", curses.A_BOLD )
+            stdscr.addstr(line, 11, str(row[10]))
+            stdscr.addstr(line, 22, "LastStTime:", curses.A_BOLD )
+            stdscr.addstr(line, 34, str(row[18]))
+            stdscr.addstr(line, 43, "TrxTime:", curses.A_BOLD )
+            stdscr.addstr(line, 52, str(row[23]))
+            stdscr.addstr(line, 64, "Mem:", curses.A_BOLD )
+            stdscr.addstr(line, 69, str(row[19]))
+            stdscr.addstr(line, 83, "Conn Type:", curses.A_BOLD )
+            stdscr.addstr(line, 94, str(row[43]))
+            line = line + 1
+            stdscr.addstr(line, 4, "State:", curses.A_BOLD )
+            stdscr.addstr(line, 11, str(row[5]))
+            line = line + 1
+            stdscr.addstr(line, 5, "ROWS:", curses.A_BOLD )
+            line = line + 1
+            stdscr.addstr(line, 11, "Examined:", curses.A_BOLD )
+            stdscr.addstr(line, 21, str(row[11]))
+            stdscr.addstr(line, 32, "Sent:", curses.A_BOLD )
+            stdscr.addstr(line, 38, str(row[12]))
+            stdscr.addstr(line, 49, "Affected:", curses.A_BOLD )
+            stdscr.addstr(line, 59, str(row[13]))
+            stdscr.addstr(line, 74, "ResourceGroup:", curses.A_BOLD )
+            stdscr.addstr(line, 89, str(row[45]))
+            line = line + 1
+            stdscr.addstr(line, 5, "Tables:", curses.A_BOLD )
+            line = line + 1
+            stdscr.addstr(line, 15, "Temp:", curses.A_BOLD )
+            stdscr.addstr(line, 21, str(row[14]))
+            stdscr.addstr(line, 32, "TempDisk:", curses.A_BOLD )
+            stdscr.addstr(line, 42, str(row[15]))
+            stdscr.addstr(line, 49, "FullScan:", curses.A_BOLD )
+            stdscr.addstr(line, 59, str(row[16]))
+
+             
+        #stdscr.refresh()
+ 
+        # Wait until delay seconds have passed while listening for the q key
+        while (datetime.now() - time).total_seconds() < delay:
+            c = stdscr.getch()
+            if c == ord("q"):
+                keep_running = False
+                if back == True:
+                    innotop.session_processlist.run(session)
+                break
+ 
+    # Reset the cures behaviour and finish
+    curses.nocbreak()
+    stdscr.keypad(False)
+    curses.echo()
+    curses.endwin()
