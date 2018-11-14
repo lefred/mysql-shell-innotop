@@ -41,3 +41,9 @@ def run(session, delay=1, back=False):
             if c == ord("q"):
                 keep_running = False
                 break
+    if not back:
+        # Reset the cures behaviour and finish
+        curses.nocbreak()
+        stdscr.keypad(False)
+        curses.echo()
+        curses.endwin

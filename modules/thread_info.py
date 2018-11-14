@@ -25,6 +25,7 @@ def run(session, thd_id, delay=1, back=False):
  
         # Print the rows in the result
         line = 4
+        query_text = None
         for row in result.fetch_all():
             stdscr.addstr(line, 0, "Query:", curses.A_BOLD )
             query_text = str(row[38])
@@ -85,11 +86,12 @@ def run(session, thd_id, delay=1, back=False):
             stdscr.addstr(line, 59, str(row[16]))
             
         line = line + 2
-        query = session.sql("EXPLAIN %s" % query_text);
-        result = query.execute()
-        if not result.has_data():
-            keep_running = False
-            break
+        if query_text:
+            query = session.sql("EXPLAIN %s" % query_text);
+            result = query.execute()
+            if not result.has_data():
+                keep_running = False
+                break
         stdscr.addstr(line, 5, "EXPLAIN:", curses.A_BOLD )
         line = line + 1
         fmt_row = " {0:4} {1:6} {2:6} {3:10} {4:6} {5:10} {6:8} {7:6} {8:6} {9:9} {10:5} {11:30}"
@@ -112,3 +114,10 @@ def run(session, thd_id, delay=1, back=False):
                 break
             if c == ord("h"):
                     innotop.help.run(session, back=True)
+    
+    if not back:
+        # Reset the cures behaviour and finish
+        curses.nocbreak()
+        stdscr.keypad(False)
+        curses.echo()
+        curses.endwin
