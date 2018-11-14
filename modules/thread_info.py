@@ -6,44 +6,8 @@ import innotop
 
 def run(session, thd_id, delay=1, back=False):
     
-    # Setup curses
-    stdscr = curses.initscr()
-    curses.start_color()
-    curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_WHITE)
-    curses.init_pair(2, curses.COLOR_CYAN, -1)
-    curses.init_pair(3, curses.COLOR_GREEN, -1)
-    curses.init_pair(4, curses.COLOR_RED, -1)
-    curses.init_pair(10, 166, curses.COLOR_WHITE)
-    curses.init_pair(11, curses.COLOR_BLUE, curses.COLOR_WHITE)
-    curses.init_pair(12, 23, curses.COLOR_WHITE)
-
-    curses.noecho()
-    curses.cbreak()
-    # Listing for 1/10th of second at a time
-    curses.halfdelay(1)
-    stdscr.keypad(True)
- 
-    # Define the query
-    sys_schema = session.get_schema("sys")
-    table = sys_schema.get_table("session")
-    #query = table.select("thd_id","conn_id","pid","user","db",
-    #        "current_statement","statement_latency","lock_latency",
-    #        "trx_latency","rows_examined"
-    #        ).order_by("statement_latency desc").limit(max_files)
-    session.set_current_schema('sys')
-    query = session.sql("select @@version, @@version_comment, @@hostname, @@port")
-    result = query.execute()
-    info = {}
-    for row in result.fetch_all():
-        info['version'] = row[0]
-        info['comment'] = row[1]
-        info['hostname'] = row[2]
-        info['port'] = row[3]
-
-    
-    # Clear screen
-    stdscr.clear()
+    # Setup curses and info to use in top bar
+    stdscr, info = innotop.common.setup(curses, session)
     
     # Run the query and generate the report
     keep_running = True
@@ -55,16 +19,7 @@ def run(session, thd_id, delay=1, back=False):
             keep_running = False
             break
 
-        y,x = stdscr.getmaxyx()
-        stdscr.addstr(0, 0, " " * x, curses.color_pair(10) )
-        stdscr.addstr(0, 0, "My", curses.color_pair(12) )
-        stdscr.addstr(0, 2, "SQL ", curses.color_pair(10) )
-        stdscr.addstr(0, 6, "Shell | ", curses.color_pair(12) )
-        stdscr.addstr(0, 14, info['comment'], curses.color_pair(10) )
-        stdscr.addstr(0, 14+len(info['comment'])+1, info['version'], curses.color_pair(10) )
-        length=len(time.strftime('%A %-d %B %H:%M:%S'))
-        stdscr.addstr(0, (x-length)-1, time.strftime('%A %-d %B %H:%M:%S'),
-                      curses.color_pair(11))
+        y,x = innotop.common.topbar(curses, stdscr, info)
 
         stdscr.addstr(2, 0, "Query Details:", curses.A_BOLD)
  

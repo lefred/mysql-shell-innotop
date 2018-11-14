@@ -12,27 +12,10 @@ def run(session, max_files=10, delay=1):
                                 "Time", "Lock Time", "Query")
     fmt_row = "{0:7s} {1:5} {2:5} {3:5} {4:15s} {5:20s}" \
             + " {6:12s} {8:10s} {9:10s} {7:65s}"
-    info = {}
-    # Setup curses
-    stdscr = curses.initscr()
-    curses.start_color()
-    curses.use_default_colors()
-    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_WHITE)
-    curses.init_pair(2, curses.COLOR_CYAN, -1)
-    curses.init_pair(3, curses.COLOR_GREEN, -1)
-    curses.init_pair(4, curses.COLOR_RED, -1)
-    curses.init_pair(10, 166, curses.COLOR_WHITE)
-    curses.init_pair(11, curses.COLOR_BLUE, curses.COLOR_WHITE)
-    curses.init_pair(12, 23, curses.COLOR_WHITE)
     main_loop = True
-    session.get_schema("sys")
-    query = session.sql("select @@version, @@version_comment, @@hostname, @@port")
-    result = query.execute()
-    for row in result.fetch_all():
-        info['version'] = row[0]
-        info['comment'] = row[1]
-        info['hostname'] = row[2]
-        info['port'] = row[3]
+
+     # Setup curses and info to use in top bar
+    stdscr, info = innotop.common.setup(curses, session)
 
     while main_loop:
         curses.noecho()
@@ -59,18 +42,9 @@ def run(session, max_files=10, delay=1):
         while keep_running:
             time = datetime.now()
             result = query.execute()
-     
-            y,x = stdscr.getmaxyx()
-
-            stdscr.addstr(0, 0, " " * x, curses.color_pair(10) )
-            stdscr.addstr(0, 0, "My", curses.color_pair(12) )
-            stdscr.addstr(0, 2, "SQL ", curses.color_pair(10) )
-            stdscr.addstr(0, 6, "Shell | ", curses.color_pair(12) )
-            stdscr.addstr(0, 14, info['comment'], curses.color_pair(10) )
-            stdscr.addstr(0, 14+len(info['comment'])+1, info['version'], curses.color_pair(10) )
-            length=len(time.strftime('%A %-d %B %H:%M:%S'))
-            stdscr.addstr(0, (x-length)-1, time.strftime('%A %-d %B %H:%M:%S'), 
-                          curses.color_pair(11))
+            
+            y,x = innotop.common.topbar(curses, stdscr, info)
+            
             stdscr.addstr(2, 0, header, curses.A_BOLD)
      
             # Print the rows in the result
@@ -99,7 +73,9 @@ def run(session, max_files=10, delay=1):
                     keep_running = False
                     main_loop = False
                     break
-
+                if c == ord("h"):
+                    innotop.help.run(session, back=True)
+                    
                 if c == ord("k"):
                     stdscr.addstr(y-1, 0, "Enter a thd_id to kill: ")
                     curses.echo()
