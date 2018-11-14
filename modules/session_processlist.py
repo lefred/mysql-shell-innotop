@@ -75,6 +75,7 @@ def run(session, max_files=10, delay=1):
                     break
                 if c == ord("h"):
                     innotop.help.run(session, back=True)
+                    keep_running = False
                     
                 if c == ord("k"):
                     stdscr.addstr(y-1, 0, "Enter a thd_id to kill: ")
@@ -92,7 +93,7 @@ def run(session, max_files=10, delay=1):
                 if c == ord("d"):
                     stdscr.addstr(y-1, 0, "Enter a thd_id: ")
                     keep_running = False
-                    main_loop = False
+                    #main_loop = False
                     curses.echo()
                     thd = stdscr.getstr()
                     curses.noecho()

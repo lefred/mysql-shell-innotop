@@ -40,12 +40,4 @@ def run(session, delay=1, back=False):
             c = stdscr.getch()
             if c == ord("q"):
                 keep_running = False
-                if back == True:
-                    innotop.session_processlist.run(session)
                 break
- 
-    # Reset the cures behaviour and finish
-    curses.nocbreak()
-    stdscr.keypad(False)
-    curses.echo()
-    curses.endwin()
