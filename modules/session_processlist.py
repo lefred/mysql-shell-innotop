@@ -4,6 +4,9 @@ from datetime import datetime
 from time import sleep
 import innotop
 
+innotop.shortcut['q']={'keep_running': False, 'main_loop': False, 'return': False}
+innotop.shortcut['k']={'keep_running': False, 'main_loop': True, 'return': False}
+
 def run(session, max_files=10, delay=1):
     # Define the output format
     fmt_header = "{0:7s} {1:5s} {2:5s} {3:5s} {4:15s} {5:20s} {6:12s}" \
@@ -69,13 +72,26 @@ def run(session, max_files=10, delay=1):
             # Wait until delay seconds have passed while listening for the q key
             while (datetime.now() - time).total_seconds() < delay:
                 c = stdscr.getch()
+                if c in range(256):
+                    if chr(c) in innotop.shortcut.keys():
+                        fh.write("FRED: %s\n" % innotop.shortcut[chr(c)]['return'] )
+                        if 'keep_running' in innotop.shortcut[chr(c)]:
+                            keep_running = innotop.shortcut[chr(c)]['keep_running'] 
+                        else:
+                            keep_running = False
+                        if 'main_loop' in innotop.shortcut[chr(c)]:
+                            main_loop = innotop.shortcut[chr(c)]['main_loop'] 
+                        else:
+                            main_loop = True
+                        if innotop.shortcut[chr(c)]['return']:
+                            method_to_call = getattr(innotop, innotop.shortcut[chr(c)]['return'])
+                            if innotop.shortcut[chr(c)]['stdscr']:
+                                method_to_call.run(session, back=True, stdscr=stdscr)
+                            else:    
+                                method_to_call.run(session, back=True)
+
                 if c == ord("q"):
-                    keep_running = False
-                    main_loop = False
                     break
-                if c == ord("h"):
-                    innotop.help.run(session, back=True)
-                    keep_running = False
                     
                 if c == ord("k"):
                     stdscr.addstr(y-1, 0, "Enter a thd_id to kill: ")
@@ -87,17 +103,7 @@ def run(session, max_files=10, delay=1):
                     conn_id = res.fetch_one()[0]
                     q=session.sql("kill query %s" % conn_id)
                     res=q.execute()
-                    keep_running = False
                     break
-
-                if c == ord("d"):
-                    stdscr.addstr(y-1, 0, "Enter a thd_id: ")
-                    keep_running = False
-                    #main_loop = False
-                    curses.echo()
-                    thd = stdscr.getstr()
-                    curses.noecho()
-                    innotop.thread_info.run(session, thd, back=True)
      
     # Reset the cures behaviour and finish
     curses.nocbreak()

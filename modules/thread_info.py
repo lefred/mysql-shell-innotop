@@ -4,9 +4,18 @@ from datetime import datetime
 from time import sleep
 import innotop
 
-def run(session, thd_id, delay=1, back=False):
-    
+innotop.shortcut['d']={'return': 'thread_info', 'stdscr': True}
+
+def run(session, thd_id=False, delay=1, back=False, stdscr=False):
     # Setup curses and info to use in top bar
+    if not thd_id:
+        y,x = stdscr.getmaxyx()
+        stdscr.addstr(y-1, 0, "Enter a thd_id: ")
+        curses.echo()
+        thd_id = stdscr.getstr()
+        curses.noecho()
+    else:
+        stdscr = curses.initscr()
     stdscr, info = innotop.common.setup(curses, session)
     
     # Run the query and generate the report

@@ -4,6 +4,8 @@ from datetime import datetime
 from time import sleep
 import innotop
 
+innotop.shortcut['h']={'return': 'help', 'stdscr': False}
+
 def run(session, delay=1, back=False):
     
     # Setup curses and info to use in top bar
