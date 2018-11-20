@@ -4,7 +4,6 @@ from datetime import datetime
 from time import sleep
 import innotop
 
-shortcut={}
 
 def topbar(curses, stdscr, info):
     curses.start_color()
