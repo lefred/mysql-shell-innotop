@@ -3,11 +3,17 @@ import curses
 from datetime import datetime
 from time import sleep
 import innotop
+from mysqlsh import globals
 
 innotop.shortcut['q']={'keep_running': False, 'main_loop': False, 'return': False}
 innotop.shortcut['k']={'keep_running': False, 'main_loop': True, 'return': False}
 
-def run(session, max_files=10, delay=1):
+def run(session=False, max_files=10, delay=1):
+    if not globals.session.is_open():
+        print("Please create a connection first.")
+        return False
+    session=globals.session
+    
     # Define the output format
     fmt_header = "{0:7s} {1:5s} {2:5s} {3:5s} {4:15s} {5:20s} {6:12s}" \
             + " {7:10s} {8:10s} {9:65s}"
