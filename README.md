@@ -13,7 +13,7 @@ How to use it:
  sys.path.append('/home/fred/workspace/mysql-shell-innotop')
  import innotop
 
- innotop.session_processlist.run(session)
+ innotop.session_processlist.run()
 ``` 
 
 It's also possible to add some steps in *~/.mysqlsh/mysqlshrc.py*:
