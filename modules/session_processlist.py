@@ -74,7 +74,6 @@ def run(session, max_files=10, delay=1):
                 c = stdscr.getch()
                 if c in range(256):
                     if chr(c) in innotop.shortcut.keys():
-                        fh.write("FRED: %s\n" % innotop.shortcut[chr(c)]['return'] )
                         if 'keep_running' in innotop.shortcut[chr(c)]:
                             keep_running = innotop.shortcut[chr(c)]['keep_running'] 
                         else:
