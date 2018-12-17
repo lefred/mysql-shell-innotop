@@ -19,8 +19,8 @@ def run(session=False, max_files=10, delay=1):
             + " {7:10s} {8:10s} {9:65s}"
     header = fmt_header.format("Cmd", "  Thd", " Conn", "  Pid", "State", "User", "Db",
                                 "Time", "Lock Time", "Query")
-    fmt_row = "{0:7s} {1:5} {2:5} {3:5} {4:15s} {5:20s}" \
-            + " {6:12s} {8:10s} {9:10s} {7:65s}"
+    fmt_row = "{0:7s} {1:5} {2:5} {3:>5} {4:15.15} {5:20}" \
+            + " {6:12} {8:10} {9:>10} {7:65}"
     main_loop = True
 
      # Setup curses and info to use in top bar
@@ -48,6 +48,7 @@ def run(session=False, max_files=10, delay=1):
         # Run the query and generate the report
         keep_running = True
         main_loop = True
+        prev_max_line = 0
         while keep_running:
             time = datetime.now()
             result = query.execute()
@@ -59,19 +60,25 @@ def run(session=False, max_files=10, delay=1):
             # Print the rows in the result
             line = 3
             for row in result.fetch_all():
-                if long(row[10]) > 60000000000000:
-                    # > 60 sec goes red
-                    stdscr.addstr(line, 0, fmt_row.format(*row),curses.color_pair(4))
-                elif long(row[10]) > 30000000000000:
-                    # > 30 sec goes green
-                    stdscr.addstr(line, 0, fmt_row.format(*row),curses.color_pair(3))
-                elif long(row[10]) > 10000000000000:
-                    # > 10 sec goes cyan
-                    stdscr.addstr(line, 0, fmt_row.format(*row),curses.color_pair(2))
-                else:
-                    stdscr.addstr(line, 0, fmt_row.format(*row))
-                line = line + 1
-     
+                if row[10]:
+                    if long(row[10]) > 60000000000000:
+                        # > 60 sec goes red
+                        stdscr.addstr(line, 0, fmt_row.format(*row),curses.color_pair(4))
+                    elif long(row[10]) > 30000000000000:
+                        # > 30 sec goes green
+                        stdscr.addstr(line, 0, fmt_row.format(*row),curses.color_pair(3))
+                    elif long(row[10]) > 10000000000000:
+                        # > 10 sec goes cyan
+                        stdscr.addstr(line, 0, fmt_row.format(*row),curses.color_pair(2))
+                    else:
+                        stdscr.addstr(line, 0, fmt_row.format(*row))
+                    line = line + 1
+            if line < prev_max_line and line > 4:
+                # clean gone lines
+                for i in range(line, prev_max_line+1):
+                    stdscr.deleteln()
+
+            prev_max_line = line           
             stdscr.refresh()
             stdscr.move(y-1,0)
      

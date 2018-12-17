@@ -24,6 +24,6 @@ It's also possible to add some steps in *~/.mysqlsh/mysqlshrc.py*:
  import innotop
 ```
 
-and then in the Shell, just call _innotop.session_processlist.run(session)_ 
+and then in the Shell, just call _innotop.session_processlist.run()_ 
 
 https://youtu.be/QFgSPxZm9CY
