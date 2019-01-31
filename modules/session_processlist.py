@@ -60,6 +60,9 @@ def run(session=False, max_files=10, delay=1):
             # Print the rows in the result
             line = 3
             for row in result.fetch_all():
+                # skip row pid = None
+                if not row[3]:
+                    continue
                 if row[10]:
                     if long(row[10]) > 60000000000000:
                         # > 60 sec goes red
