@@ -1,4 +1,5 @@
-import __builtin__
+#import __builtin__
+import builtins
 import curses
 from datetime import datetime
 from time import sleep

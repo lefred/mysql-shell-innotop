@@ -6,5 +6,6 @@ shortcut={}
 
 
 from modules import *
-import __builtin__
+#import __builtin__
+import builtins
 

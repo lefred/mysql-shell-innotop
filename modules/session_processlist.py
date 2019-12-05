@@ -1,4 +1,6 @@
-import __builtin__
+#import __builtin__
+import builtins
+
 import curses
 from datetime import datetime
 from time import sleep
@@ -19,8 +21,8 @@ def run(session=False, max_files=10, delay=1):
             + " {7:10s} {8:10s} {9:65s}"
     header = fmt_header.format("Cmd", "  Thd", " Conn", "  Pid", "State", "User", "Db",
                                 "Time", "Lock Time", "Query")
-    fmt_row = "{0:7s} {1:5} {2:5} {3:>5} {4:15.15} {5:20}" \
-            + " {6:12} {8:10} {9:>10} {7:65}"
+    fmt_row = "{0!s:7s} {1!s:>5} {2!s:>5} {3!s:>5} {4!s:15.15} {5!s:<20}" \
+            + " {6!s:12} {8!s:10} {9!s:>10} {7!s:65}"
     main_loop = True
 
      # Setup curses and info to use in top bar
@@ -61,16 +63,16 @@ def run(session=False, max_files=10, delay=1):
             line = 3
             for row in result.fetch_all():
                 # skip row pid = None
-                if not row[3]:
+                if not row[4]:
                     continue
                 if row[10]:
-                    if long(row[10]) > 60000000000000:
+                    if int(row[10]) > 60000000000000:
                         # > 60 sec goes red
                         stdscr.addstr(line, 0, fmt_row.format(*row),curses.color_pair(4))
-                    elif long(row[10]) > 30000000000000:
+                    elif int(row[10]) > 30000000000000:
                         # > 30 sec goes green
                         stdscr.addstr(line, 0, fmt_row.format(*row),curses.color_pair(3))
-                    elif long(row[10]) > 10000000000000:
+                    elif int(row[10]) > 10000000000000:
                         # > 10 sec goes cyan
                         stdscr.addstr(line, 0, fmt_row.format(*row),curses.color_pair(2))
                     else:
@@ -113,7 +115,7 @@ def run(session=False, max_files=10, delay=1):
                     curses.echo()
                     thd = stdscr.getstr()
                     curses.noecho()
-                    q=session.sql("select conn_id from sys.processlist where thd_id=%s" % thd)
+                    q=session.sql("select conn_id from sys.processlist where thd_id=%s" % thd.decode("utf-8"))
                     res=q.execute()
                     conn_id = res.fetch_one()[0]
                     q=session.sql("kill query %s" % conn_id)

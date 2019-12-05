@@ -1,4 +1,6 @@
-import __builtin__
+#import __builtin__
+import builtins
+
 import curses
 from datetime import datetime
 from time import sleep
@@ -22,7 +24,7 @@ def run(session, thd_id=False, delay=1, back=False, stdscr=False):
     keep_running = True
     while keep_running:
         time = datetime.now()
-        query = session.sql("select * from sys.processlist p1 join performance_schema.threads pps on pps.thread_id = p1.thd_id where thd_id=%s" % thd_id);
+        query = session.sql("select * from sys.processlist p1 join performance_schema.threads pps on pps.thread_id = p1.thd_id where thd_id=%s" % thd_id.decode("utf-8"));
         result = query.execute()
         if not result.has_data():
             keep_running = False
@@ -103,7 +105,7 @@ def run(session, thd_id=False, delay=1, back=False, stdscr=False):
                 break
         stdscr.addstr(line, 5, "EXPLAIN:", curses.A_BOLD )
         line = line + 1
-        fmt_row = " {0:4} {1:6} {2:6} {3:10} {4:6} {5:10} {6:8} {7:6} {8:6} {9:9} {10:5} {11:30}"
+        fmt_row = " {0!s:4} {1!s:6} {2!s:6} {3!s:10} {4!s:6} {5!s:10} {6!s:8} {7!s:6} {8!s:6} {9!s:>9} {10!s:5} {11!s:30}"
         header = fmt_row.format("  id", "select", "table", "partitions", "type", "poss keys", "key", "k len", "ref", "     rows", "filt ", "extra")
         stdscr.addstr(line, 0, header, curses.A_BOLD)
 
